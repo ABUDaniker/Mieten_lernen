@@ -4,14 +4,14 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mieten – Lernumgebung V8</title>
+    <title>Mieten – Lernumgebung V9</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg-main: #f3f4f6;
             --bg-card: #ffffff;
             --bg-input: #f9fafb;
-            --accent: #059669; /* Ein frisches Grün für das neue Thema */
+            --accent: #059669;
             --accent-light: #d1fae5;
             --accent-hover: #047857;
             --text-main: #1f2937;
@@ -23,252 +23,111 @@
             --success-bg: #f0fdf4;
             --success-border: #22c55e;
             --success-text: #166534;
+            --error-text: #b91c1c;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg-main);
-            color: var(--text-main);
-            line-height: 1.6;
-            min-height: 100vh;
-        }
-
+        body { font-family: 'Inter', sans-serif; background: var(--bg-main); color: var(--text-main); line-height: 1.6; min-height: 100vh; }
         .container { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
-
         .view { display: none; animation: fadeIn 0.4s ease-in-out; }
         .view.active { display: block; }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         header { text-align: center; padding: 2rem 0; }
         header h1 { font-size: 2rem; font-weight: 700; color: var(--accent); }
-        header .subtitle { font-size: 0.95rem; color: var(--text-muted); }
-
         .card { background: var(--bg-card); border-radius: var(--radius); padding: 2rem; margin-bottom: 1.5rem; box-shadow: 0 4px 6px var(--shadow); border: 1px solid var(--border); }
 
-        /* Login & Dashboard */
-        .login-box { max-width: 400px; margin: 4rem auto; text-align: center; }
-        .login-box input { width: 100%; padding: 0.8rem; margin: 1.2rem 0; border: 1.5px solid var(--border); border-radius: 8px; font-size: 1rem; background: var(--bg-input); }
-        .dashboard-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-        .dashboard-table th, .dashboard-table td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); }
-        .dashboard-table th { background-color: var(--accent-light); color: var(--accent); }
-        .status-badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; background: #dcfce7; color: #166534; }
+        /* Drag & Drop Styles */
+        .word-bank { display: flex; flex-wrap: wrap; gap: 10px; margin: 1.5rem 0; padding: 15px; background: var(--bg-input); border-radius: 8px; border: 1px dashed var(--border); }
+        .draggable-word { padding: 6px 12px; background: white; border: 1.5px solid var(--accent); color: var(--accent); border-radius: 6px; cursor: grab; font-size: 0.9rem; font-weight: 600; user-select: none; }
+        .draggable-word:active { cursor: grabbing; }
+        .draggable-word.dragging { opacity: 0.5; }
 
-        /* Video & Aufgaben */
-        .video-wrapper { position: relative; padding-bottom: 56.25%; height: 0; border-radius: 8px; overflow: hidden; background: #000; margin-bottom: 1.5rem; }
-        .video-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+        .cloze-text { line-height: 2.2; font-size: 0.95rem; }
+        .drop-zone { display: inline-flex; align-items: center; justify-content: center; min-width: 120px; height: 30px; border-bottom: 2px solid var(--accent); margin: 0 5px; vertical-align: middle; transition: background 0.2s; position: relative; }
+        .drop-zone.hover { background: var(--accent-light); }
+        .drop-zone .placed-word { font-weight: 700; color: var(--accent); }
+        .feedback-text { font-size: 0.8rem; margin-left: 5px; font-weight: 600; display: none; }
+        .correct-feedback { color: var(--success-text); }
+        .wrong-feedback { color: var(--error-text); }
+
+        /* Standard Styles */
         .task-header { font-size: 1.1rem; font-weight: 700; color: var(--accent); margin-bottom: 0.5rem; }
-        .task-text { font-size: 0.95rem; color: var(--text-main); margin-bottom: 1rem; }
+        .task-text { font-size: 0.95rem; margin-bottom: 1rem; }
+        textarea { width: 100%; min-height: 100px; padding: 1rem; border: 1.5px solid var(--border); border-radius: 8px; background: var(--bg-input); font-family: inherit; font-size: 0.95rem; margin-top: 0.5rem; }
+        .btn-check, .btn-reset { padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; border: 1px solid var(--border); background: white; margin-top: 10px; }
+        .btn-check { color: var(--accent); border-color: var(--accent); margin-right: 5px; }
+        .btn-primary { width: 100%; padding: 0.8rem; background: var(--accent); color: white; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; }
+        .status-badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 600; background: #dcfce7; color: #166534; }
         
-        textarea { width: 100%; min-height: 100px; padding: 1rem; border: 1.5px solid var(--border); border-radius: 8px; background: var(--bg-input); font-family: inherit; font-size: 0.95rem; margin-top: 0.5rem; transition: border-color 0.2s; resize: vertical; }
-        textarea:focus { outline: none; border-color: var(--border-focus); background: #fff; }
-
-        /* Actions */
-        .action-group { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
-        .btn-check, .btn-reset { padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: 0.2s; border: 1px solid var(--border); background: white; }
-        .btn-check { color: var(--accent); border-color: var(--accent); }
-        .btn-check:hover { background: var(--accent-light); }
-        .btn-reset { color: #b45309; border-color: #fcd34d; }
-        .btn-reset:hover { background: #fef3c7; }
-
-        .solution-box { display: none; background: var(--success-bg); border-left: 4px solid var(--success-border); padding: 1rem; margin-top: 1rem; border-radius: 0 8px 8px 0; font-size: 0.9rem; color: var(--success-text); }
-        .solution-box.active { display: block; }
-
-        .btn-primary { width: 100%; padding: 0.8rem; background: var(--accent); color: white; font-weight: 600; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; }
-        .btn-primary:hover { background: var(--accent-hover); }
-        .logout-btn { background: transparent; color: var(--text-muted); border: 1px solid var(--border); margin-top: 2rem; width: auto; padding: 0.5rem 1.5rem; }
-
-        @media print {
-            .btn-check, .btn-reset, .solution-box, .logout-btn, .btn-primary { display: none !important; }
-            .card { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; }
-        }
+        @media print { .no-print { display: none !important; } }
     </style>
 </head>
 <body>
 
     <div class="container">
         <div id="view-login" class="view active">
-            <header>
-                <h1>Beobachtungsblatt «mieten»</h1>
-                <div class="subtitle">Berufsbildungsschule Winterthur – Allgemeinbildung</div>
-            </header>
+            <header><h1>Beobachtungsblatt «mieten»</h1></header>
             <div class="card login-box">
-                <p class="task-text">Bitte loggen Sie sich mit Ihrem Namen ein.</p>
                 <input type="text" id="login-input" placeholder="Vorname Nachname" required>
-                <button class="btn-primary" onclick="handleLogin()">Lernumgebung öffnen</button>
+                <button class="btn-primary" onclick="handleLogin()">Einloggen</button>
             </div>
         </div>
 
         <div id="view-teacher" class="view">
-            <header><h1>Klassen-Dashboard: Wohnen</h1></header>
-            <div class="card">
-                <table class="dashboard-table">
-                    <thead><tr><th>Lernende(r)</th><th>Fortschritt</th></tr></thead>
-                    <tbody id="student-list"></tbody>
-                </table>
-            </div>
-            <button class="btn-primary logout-btn" onclick="logout()">Abmelden</button>
+            <header><h1>Klassen-Dashboard</h1></header>
+            <div class="card"><table class="dashboard-table"><thead><tr><th>Name</th><th>Status</th></tr></thead><tbody id="student-list"></tbody></table></div>
+            <button class="btn-check" onclick="logout()">Abmelden</button>
         </div>
 
         <div id="view-student" class="view">
-            <header>
-                <h1>Beobachtungsblatt «mieten»</h1>
-                <div class="subtitle" id="student-display"></div>
-            </header>
+            <header><h1>Beobachtungsblatt «mieten»</h1><div id="student-display" style="font-size: 0.9rem; color: var(--text-muted);"></div></header>
 
-            <div class="card">
-                <div class="video-wrapper">
-                    <iframe src="https://tp.srgssr.ch/p/srf/embed?urn=urn:srf:video:6fa701e9-7db7-4614-98df-98b8de189ffc" allowfullscreen></iframe>
-                </div>
-                <p class="task-text">Schauen Sie sich das Video aufmerksam an und bearbeiten Sie die folgenden Aufgaben.</p>
-            </div>
+            <div class="card"><div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:8px;"><iframe style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" src="https://tp.srgssr.ch/p/srf/embed?urn=urn:srf:video:6fa701e9-7db7-4614-98df-98b8de189ffc" allowfullscreen></iframe></div></div>
 
             <div class="card" id="task-c-1">
                 <div class="task-header">Aufgabe 1</div>
-                <p class="task-text">Welche Vorteile nennt Donato Scognamiglio beim Mieten gegenüber dem Kaufen? [cite: 95]</p>
+                <p class="task-text">Vorteile des Mietens laut Donato Scognamiglio? [cite: 95]</p>
                 <textarea class="task-input" data-task="Aufgabe 1"></textarea>
-                <div class="action-group">
-                    <button class="btn-check" onclick="toggleSol('sol-1')">Lösung prüfen</button>
-                    <button class="btn-reset" onclick="resetT('task-c-1', 'sol-1')">Wiederholen</button>
-                </div>
-                <div id="sol-1" class="solution-box">
-                    <strong>Musterlösung:</strong> Man ist flexibler und weniger gebunden. Zudem benötigt man weniger Geld auf einmal, da nicht der gesamte Kaufpreis sofort bezahlt werden muss. [cite: 96, 97]
-                </div>
-            </div>
-
-            <div class="card" id="task-c-2">
-                <div class="task-header">Aufgabe 2</div>
-                <p class="task-text">Was kann man Skurriles oder Ausgefallenes mieten? [cite: 98]</p>
-                <textarea class="task-input" data-task="Aufgabe 2"></textarea>
-                <div class="action-group">
-                    <button class="btn-check" onclick="toggleSol('sol-2')">Lösung prüfen</button>
-                    <button class="btn-reset" onclick="resetT('task-c-2', 'sol-2')">Wiederholen</button>
-                </div>
-                <div id="sol-2" class="solution-box">
-                    <strong>Beispiele:</strong> Fussballstadien, U-Boote für Filme, Inseln, Stars für ein Abendessen, Schlösser, Gräber oder Kunstwerke. [cite: 99]
-                </div>
-            </div>
-
-            <div class="card" id="task-c-3">
-                <div class="task-header">Aufgabe 3</div>
-                <p class="task-text">Welche Faktoren beeinflussen den Mietpreis und wie ist der Zusammenhang mit Angebot und Nachfrage? [cite: 100]</p>
-                <textarea class="task-input" data-task="Aufgabe 3"></textarea>
-                <div class="action-group">
-                    <button class="btn-check" onclick="toggleSol('sol-3')">Lösung prüfen</button>
-                    <button class="btn-reset" onclick="resetT('task-c-3', 'sol-3')">Wiederholen</button>
-                </div>
-                <div id="sol-3" class="solution-box">
-                    <strong>Zusammenhang:</strong> Angebot und Nachfrage bestimmen den Preis. Faktoren wie die Lage und der Steuerfuss beeinflussen die Miethöhe zusätzlich. Ein hohes Angebot senkt den Preis, eine hohe Nachfrage steigert ihn. [cite: 101, 102, 137, 138]
-                </div>
-            </div>
-
-            <div class="card" id="task-c-4">
-                <div class="task-header">Aufgabe 4</div>
-                <p class="task-text">Was ist Angela Beffa bei der Auswahl des Musikgeschäfts wichtig? [cite: 104]</p>
-                <textarea class="task-input" data-task="Aufgabe 4"></textarea>
-                <div class="action-group">
-                    <button class="btn-check" onclick="toggleSol('sol-4')">Lösung prüfen</button>
-                    <button class="btn-reset" onclick="resetT('task-c-4', 'sol-4')">Wiederholen</button>
-                </div>
-                <div id="sol-4" class="solution-box">
-                    <strong>Lösung:</strong> Gute Erreichbarkeit, die Möglichkeit Objekte vorab zu testen und eine ausführliche Beratung durch den Vermieter. [cite: 105, 106, 107]
-                </div>
-            </div>
-
-            <div class="card" id="task-c-5">
-                <div class="task-header">Aufgabe 5</div>
-                <p class="task-text">Was regelt der Mietvertrag von Angela und Simone und welche Bedeutung hat die Unterschrift? [cite: 108]</p>
-                <textarea class="task-input" data-task="Aufgabe 5"></textarea>
-                <div class="action-group">
-                    <button class="btn-check" onclick="toggleSol('sol-5')">Lösung prüfen</button>
-                    <button class="btn-reset" onclick="resetT('task-c-5', 'sol-5')">Wiederholen</button>
-                </div>
-                <div id="sol-5" class="solution-box">
-                    <strong>Lösung:</strong> Er regelt die Mietdauer, die Haftung im Schadensfall und den Mietpreis. Die Unterschrift macht den Vertrag rechtsverbindlich. [cite: 109, 111, 135]
-                </div>
-            </div>
-
-            <div class="card" id="task-c-6">
-                <div class="task-header">Aufgabe 6</div>
-                <p class="task-text">Welche Tipps gibt Donato Scognamiglio jugendlichen Mieter/-innen? [cite: 112]</p>
-                <textarea class="task-input" data-task="Aufgabe 6"></textarea>
-                <div class="action-group">
-                    <button class="btn-check" onclick="toggleSol('sol-6')">Lösung prüfen</button>
-                    <button class="btn-reset" onclick="resetT('task-c-6', 'sol-6')">Wiederholen</button>
-                </div>
-                <div id="sol-6" class="solution-box">
-                    <strong>Tipps:</strong> Nicht alleine mieten gehen, den Vertrag gemeinsam mit einer Vertrauensperson anschauen und Nebenkosten sowie das Mietzinsdepot einplanen. [cite: 113, 114, 115]
-                </div>
-            </div>
-
-            <div class="card" id="task-c-7">
-                <div class="task-header">Aufgabe 7</div>
-                <p class="task-text">Was mieteten und vermieteten bereits die Römer? </p>
-                <textarea class="task-input" data-task="Aufgabe 7"></textarea>
-                <div class="action-group">
-                    <button class="btn-check" onclick="toggleSol('sol-7')">Lösung prüfen</button>
-                    <button class="btn-reset" onclick="resetT('task-c-7', 'sol-7')">Wiederholen</button>
-                </div>
-                <div id="sol-7" class="solution-box">
-                    <strong>Lösung:</strong> Sklaven, Vasen, Weinfässer und Häuser. 
-                </div>
-            </div>
-
-            <div class="card" id="task-c-8">
-                <div class="task-header">Aufgabe 8</div>
-                <p class="task-text">Nennen Sie drei Sonderformen der Miete. [cite: 117]</p>
-                <textarea class="task-input" data-task="Aufgabe 8"></textarea>
-                <div class="action-group">
-                    <button class="btn-check" onclick="toggleSol('sol-8')">Lösung prüfen</button>
-                    <button class="btn-reset" onclick="resetT('task-c-8', 'sol-8')">Wiederholen</button>
-                </div>
-                <div id="sol-8" class="solution-box">
-                    <strong>Formen:</strong> Pacht, Leasing und Kredit. [cite: 118]
-                </div>
-            </div>
-
-            <div class="card" id="task-c-9">
-                <div class="task-header">Aufgabe 9</div>
-                <p class="task-text">Welche Punkte sorgen häufig für Streit zwischen Vermieter und Mieter? [cite: 119]</p>
-                <textarea class="task-input" data-task="Aufgabe 9"></textarea>
-                <div class="action-group">
-                    <button class="btn-check" onclick="toggleSol('sol-9')">Lösung prüfen</button>
-                    <button class="btn-reset" onclick="resetT('task-c-9', 'sol-9')">Wiederholen</button>
-                </div>
-                <div id="sol-9" class="solution-box">
-                    <strong>Konfliktpunkte:</strong> Verursachung von Schäden, Mieterhöhungen, die Hausordnung (z.B. Waschküche) oder Ruhestörungen durch Nachbarn. [cite: 120, 127]
-                </div>
+                <button class="btn-check" onclick="toggle('sol-1')">Lösung</button>
+                <div id="sol-1" style="display:none; padding:10px; background:#f0fdf4; margin-top:10px; border-radius:5px;">Flexibler, weniger gebunden, weniger Kapital nötig. [cite: 96, 97]</div>
             </div>
 
             <div class="card" id="task-c-10">
-                <div class="task-header">Aufgabe 10</div>
-                <p class="task-text">Zusammenfassung: Ergänzen Sie die Lücken im Text. [cite: 128]</p>
-                <p class="task-text" style="font-style: italic; background: #eee; padding: 10px; border-radius: 5px;">
-                    Flexibilität, Reparaturen, rechtsverbindlich, Investitionen, Nachfrage, Vorteile, Angebot, Wohnfläche, Ausstattung [cite: 139]
-                </p>
-                <textarea class="task-input tall" data-task="Aufgabe 10" placeholder="Mieten bietet eine größere..."></textarea>
-                <div class="action-group">
-                    <button class="btn-check" onclick="toggleSol('sol-10')">Lösung prüfen</button>
-                    <button class="btn-reset" onclick="resetT('task-c-10', 'sol-10')">Wiederholen</button>
+                <div class="task-header">Aufgabe 10: Zusammenfassung</div>
+                <p class="task-text">Ziehen Sie die richtigen Begriffe in die Lücken des Textes: [cite: 128]</p>
+                
+                <div class="word-bank no-print" id="word-bank">
+                    <div class="draggable-word" draggable="true" data-word="Vorteile">Vorteile</div>
+                    <div class="draggable-word" draggable="true" data-word="Investitionen">Investitionen</div>
+                    <div class="draggable-word" draggable="true" data-word="Flexibilität">Flexibilität</div>
+                    <div class="draggable-word" draggable="true" data-word="Wohnfläche">Wohnfläche</div>
+                    <div class="draggable-word" draggable="true" data-word="Reparaturen">Reparaturen</div>
+                    <div class="draggable-word" draggable="true" data-word="rechtsverbindlich">rechtsverbindlich</div>
+                    <div class="draggable-word" draggable="true" data-word="Ausstattung">Ausstattung</div>
+                    <div class="draggable-word" draggable="true" data-word="Angebot">Angebot</div>
+                    <div class="draggable-word" draggable="true" data-word="Nachfrage">Nachfrage</div>
                 </div>
-                <div id="sol-10" class="solution-box">
-                    <strong>Lösungstext:</strong> Donato Scognamiglio hebt die <strong>Vorteile</strong> hervor... betont, dass Mieter keine hohen <strong>Investitionen</strong> tätigen müssen... bietet eine größere <strong>Flexibilität</strong>... Nutzung der <strong>Wohnfläche</strong> festgelegt... wer für <strong>Reparaturen</strong> verantwortlich ist... Unterschrift macht Vertrag <strong>rechtsverbindlich</strong>... durch Faktoren wie Lage und <strong>Ausstattung</strong> bestimmt... großes <strong>Angebot</strong> senkt den Preis... starke <strong>Nachfrage</strong> führt zu höheren Kosten. [cite: 129-138]
+
+                <div class="cloze-text">
+                    Donato Scognamiglio hebt die <span class="drop-zone" data-correct="Vorteile" data-id="0"></span> hervor, die es von einem Kauf unterscheiden. [cite: 129] 
+                    Er betont, dass Mieter keine hohen <span class="drop-zone" data-correct="Investitionen" data-id="1"></span> tätigen müssen. [cite: 130] 
+                    Zudem bietet das Mieten eine größere <span class="drop-zone" data-correct="Flexibilität" data-id="2"></span> in der Wohnortwahl. [cite: 131] 
+                    Im Mietvertrag wird etwa die Nutzung der <span class="drop-zone" data-correct="Wohnfläche" data-id="3"></span> festgelegt. [cite: 133] 
+                    Der Vertrag bestimmt weiterhin, wer für anfallende <span class="drop-zone" data-correct="Reparaturen" data-id="4"></span> verantwortlich ist. [cite: 134] 
+                    Die Unterschrift der Parteien macht den Vertrag <span class="drop-zone" data-correct="rechtsverbindlich" data-id="5"></span>. [cite: 135] 
+                    Der Mietpreis wird durch Faktoren wie Lage und <span class="drop-zone" data-correct="Ausstattung" data-id="6"></span> bestimmt. [cite: 136] 
+                    Ein großes <span class="drop-zone" data-correct="Angebot" data-id="7"></span> senkt den Mietpreis. [cite: 137] 
+                    Eine starke <span class="drop-zone" data-correct="Nachfrage" data-id="8"></span> hingegen führt zu höheren Kosten. [cite: 138]
+                </div>
+
+                <div class="no-print">
+                    <button class="btn-check" onclick="checkCloze()">Lösung überprüfen</button>
+                    <button class="btn-reset" onclick="resetCloze()">Wiederholen</button>
                 </div>
             </div>
 
-            <div class="card">
-                <div class="task-header">Aufgabe 11</div>
-                <p class="task-text">Reflexion: Würden Sie bei einer Miete so vorgehen wie die Band Caprice oder etwas anders machen? Begründen Sie. [cite: 140]</p>
-                <textarea class="task-input" data-task="Aufgabe 11"></textarea>
-                <p class="task-text" style="margin-top:10px; font-style:italic; color: var(--text-muted);">Individuelle Antwort erforderlich. </p>
-            </div>
-
-            <button class="btn-primary logout-btn" onclick="logout()">Abmelden</button>
+            <button class="btn-primary no-print" style="margin-top:20px" onclick="window.print()">Ergebnisse als PDF speichern</button>
+            <button class="btn-check no-print" style="width:auto" onclick="logout()">Abmelden</button>
         </div>
     </div>
 
@@ -276,69 +135,101 @@
         const sUrl = 'https://vshlpndqktpmtnwarxui.supabase.co';
         const sKey = 'sb_publishable_4RadbUY4N2NV5SeaUrvlPg_spcQoznE';
         const sClient = window.supabase.createClient(sUrl, sKey);
+        let uName = '';
 
-        let userName = '';
-
-        function switchV(vId) {
-            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-            document.getElementById(vId).classList.add('active');
-        }
-
-        function toggleSol(id) { document.getElementById(id).classList.toggle('active'); }
-
-        function resetT(cId, sId) {
-            const ta = document.getElementById(cId).querySelector('textarea');
-            ta.value = '';
-            localStorage.setItem('mieten_ta_' + Array.from(document.querySelectorAll('.task-input')).indexOf(ta), '');
-            document.getElementById(sId).classList.remove('active');
-            uProg(ta.getAttribute('data-task') + ' (Reset)');
-        }
+        function toggle(id) { const e = document.getElementById(id); e.style.display = e.style.display === 'none' ? 'block' : 'none'; }
 
         async function handleLogin() {
-            const input = document.getElementById('login-input').value.trim();
-            if (!input) { alert("Bitte Namen eingeben"); return; }
-            userName = input;
-            localStorage.setItem('savedMietenUser', input);
-
-            if (input.toLowerCase().includes('lehrer')) {
-                switchV('view-teacher');
-                loadD();
-                setupR();
-            } else {
-                document.getElementById('student-display').innerText = "Angemeldet als: " + input;
-                switchV('view-student');
-                uProg('Eingeloggt');
-            }
+            const val = document.getElementById('login-input').value.trim();
+            if(!val) return;
+            uName = val;
+            localStorage.setItem('user_v9', uName);
+            if(val.toLowerCase().includes('lehrer')) { switchView('view-teacher'); loadDash(); setupRT(); }
+            else { document.getElementById('student-display').innerText = "Angemeldet: " + uName; switchView('view-student'); updateStatus('Eingeloggt'); initCloze(); }
         }
 
-        async function uProg(tName) {
-            if (!userName || userName.toLowerCase().includes('lehrer')) return;
-            await sClient.from('student_progress').upsert({ email: userName, current_task: tName, status: 'online' }, { onConflict: 'email' });
+        async function updateStatus(t) { if(!uName || uName.toLowerCase().includes('lehrer')) return; await sClient.from('student_progress').upsert({ email: uName, current_task: t, status: 'online' }, { onConflict: 'email' }); }
+
+        // Drag & Drop Logic
+        function initCloze() {
+            const draggables = document.querySelectorAll('.draggable-word');
+            const zones = document.querySelectorAll('.drop-zone');
+
+            draggables.forEach(d => {
+                d.addEventListener('dragstart', () => d.classList.add('dragging'));
+                d.addEventListener('dragend', () => d.classList.remove('dragging'));
+            });
+
+            zones.forEach(z => {
+                z.addEventListener('dragover', e => { e.preventDefault(); z.classList.add('hover'); });
+                z.addEventListener('dragleave', () => z.classList.remove('hover'));
+                z.addEventListener('drop', e => {
+                    e.preventDefault();
+                    z.classList.remove('hover');
+                    const word = document.querySelector('.dragging').dataset.word;
+                    z.innerHTML = `<span class="placed-word">${word}</span>`;
+                    z.dataset.placed = word;
+                    saveCloze();
+                    updateStatus('Aufgabe 10 bearbeitet');
+                });
+
+                // Laden aus Speicher
+                const saved = localStorage.getItem(`cloze_${uName}_${z.dataset.id}`);
+                if(saved) { z.innerHTML = `<span class="placed-word">${saved}</span>`; z.dataset.placed = saved; }
+            });
         }
 
-        async function loadD() {
+        function saveCloze() {
+            document.querySelectorAll('.drop-zone').forEach(z => {
+                if(z.dataset.placed) localStorage.setItem(`cloze_${uName}_${z.dataset.id}`, z.dataset.placed);
+            });
+        }
+
+        function checkCloze() {
+            document.querySelectorAll('.drop-zone').forEach(z => {
+                const placed = z.dataset.placed || "";
+                const correct = z.dataset.correct;
+                let fb = z.querySelector('.feedback-text');
+                if(!fb) { fb = document.createElement('span'); fb.className = 'feedback-text'; z.appendChild(fb); }
+                
+                fb.style.display = 'inline';
+                if(placed === correct) { fb.innerHTML = ' (✓)'; fb.className = 'feedback-text correct-feedback'; }
+                else { fb.innerHTML = ` (Lösung: ${correct})`; fb.className = 'feedback-text wrong-feedback'; }
+            });
+        }
+
+        function resetCloze() {
+            document.querySelectorAll('.drop-zone').forEach(z => {
+                z.innerHTML = '';
+                delete z.dataset.placed;
+                localStorage.removeItem(`cloze_${uName}_${z.dataset.id}`);
+            });
+            updateStatus('Aufgabe 10 zurückgesetzt');
+        }
+
+        async function loadDash() {
             const { data } = await sClient.from('student_progress').select('*');
-            const tb = document.getElementById('student-list');
-            tb.innerHTML = '';
-            if (data) data.forEach(s => { tb.innerHTML += `<tr><td>${s.email}</td><td><span class="status-badge">${s.current_task}</span></td></tr>`; });
+            const list = document.getElementById('student-list');
+            list.innerHTML = '';
+            data.forEach(s => list.innerHTML += `<tr><td>${s.email}</td><td><span class="status-badge">${s.current_task}</span></td></tr>`);
         }
 
-        function setupR() { sClient.channel('any').on('postgres_changes', { event: '*', schema: 'public', table: 'student_progress' }, () => loadD()).subscribe(); }
-
+        function setupRT() { sClient.channel('any').on('postgres_changes', { event: '*', schema: 'public', table: 'student_progress' }, () => loadDash()).subscribe(); }
+        function switchView(id) { document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); document.getElementById(id).classList.add('active'); }
         function logout() { localStorage.clear(); location.reload(); }
 
         document.addEventListener('DOMContentLoaded', () => {
-            const inputs = document.querySelectorAll('.task-input');
-            inputs.forEach((ta, i) => {
-                const s = localStorage.getItem('mieten_ta_' + i);
-                if (s) ta.value = s;
+            const saved = localStorage.getItem('user_v9');
+            if(saved) { document.getElementById('login-input').value = saved; handleLogin(); }
+            
+            document.querySelectorAll('.task-input').forEach((ta, i) => {
+                const s = localStorage.getItem(`ta_${uName}_${i}`);
+                if(s) ta.value = s;
                 ta.addEventListener('input', () => {
-                    localStorage.setItem('mieten_ta_' + i, ta.value);
-                    uProg(ta.getAttribute('data-task'));
+                    localStorage.setItem(`ta_${uName}_${i}`, ta.value);
+                    updateStatus(ta.dataset.task);
                 });
             });
-            const saved = localStorage.getItem('savedMietenUser');
-            if (saved) { document.getElementById('login-input').value = saved; handleLogin(); }
         });
     </script>
 </body>
