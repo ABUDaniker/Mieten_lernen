@@ -271,12 +271,21 @@
 
         function toggle(id) { const e = document.getElementById(id); e.classList.toggle('active'); }
 
+        const TEACHER_PASSWORD = 'Lehrer2026!';
+
         async function handleLogin() {
             const val = document.getElementById('login-input').value.trim();
             if(!val) return;
             uName = val;
             localStorage.setItem('user_mieten_v10', uName);
-            if(val.toLowerCase().includes('lehrer')) { switchView('view-teacher'); loadDash(); setupRT(); }
+            if(val.toLowerCase().includes('lehrer')) {
+                const pw = prompt('Lehrer-Passwort eingeben:');
+                if (pw !== TEACHER_PASSWORD) {
+                    alert('Falsches Passwort.');
+                    return;
+                }
+                switchView('view-teacher'); loadDash(); setupRT();
+            }
             else { 
                 document.getElementById('student-display').innerText = "Angemeldet: " + uName; 
                 switchView('view-student'); 
@@ -304,13 +313,23 @@
                     e.preventDefault();
                     z.classList.remove('hover');
                     const word = document.querySelector('.dragging').dataset.word;
-                    z.innerHTML = `<span class="placed-word">${word}</span>`;
+                    const span = document.createElement('span');
+                    span.className = 'placed-word';
+                    span.textContent = word;
+                    z.innerHTML = '';
+                    z.appendChild(span);
                     z.dataset.placed = word;
                     saveCloze();
                     updateStatus('Aufgabe 10 bearbeitet');
                 });
                 const saved = localStorage.getItem(`cloze_${uName}_${z.dataset.id}`);
-                if(saved) { z.innerHTML = `<span class="placed-word">${saved}</span>`; z.dataset.placed = saved; }
+                if(saved) {
+                    const span = document.createElement('span');
+                    span.className = 'placed-word';
+                    span.textContent = saved;
+                    z.appendChild(span);
+                    z.dataset.placed = saved;
+                }
             });
         }
 
@@ -327,8 +346,8 @@
                 let fb = z.querySelector('.feedback-text');
                 if(!fb) { fb = document.createElement('span'); fb.className = 'feedback-text'; z.appendChild(fb); }
                 fb.style.display = 'inline';
-                if(placed === correct) { fb.innerHTML = ' (✓)'; fb.className = 'feedback-text correct-feedback'; }
-                else { fb.innerHTML = ` (Lösung: ${correct})`; fb.className = 'feedback-text wrong-feedback'; }
+                if(placed === correct) { fb.textContent = ' (✓)'; fb.className = 'feedback-text correct-feedback'; }
+                else { fb.textContent = ' (Lösung: ' + correct + ')'; fb.className = 'feedback-text wrong-feedback'; }
             });
         }
 
@@ -352,7 +371,19 @@
             const { data } = await sClient.from('student_progress').select('*');
             const list = document.getElementById('student-list');
             list.innerHTML = '';
-            if(data) data.forEach(s => list.innerHTML += `<tr><td>${s.email}</td><td><span class="status-badge">${s.current_task}</span></td></tr>`);
+            if(data) data.forEach(s => {
+                const tr = document.createElement('tr');
+                const tdName = document.createElement('td');
+                tdName.textContent = s.email;
+                const tdTask = document.createElement('td');
+                const badge = document.createElement('span');
+                badge.className = 'status-badge';
+                badge.textContent = s.current_task;
+                tdTask.appendChild(badge);
+                tr.appendChild(tdName);
+                tr.appendChild(tdTask);
+                list.appendChild(tr);
+            });
         }
 
         function setupRT() { sClient.channel('any').on('postgres_changes', { event: '*', schema: 'public', table: 'student_progress' }, () => loadDash()).subscribe(); }
