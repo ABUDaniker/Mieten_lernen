@@ -108,7 +108,7 @@
             <header><h1>Lehrer-Übersicht: Mieten</h1></header>
             <div class="card">
                 <table class="dashboard-table">
-                    <thead><tr><th>Name</th><th>Status / Letzte Aufgabe</th></tr></thead>
+                    <thead><tr><th>Name</th><th>Plattform</th><th>Aufgabe</th></tr></thead>
                     <tbody id="student-list"></tbody>
                 </table>
             </div>
@@ -272,6 +272,7 @@
         function toggle(id) { const e = document.getElementById(id); e.classList.toggle('active'); }
 
         const TEACHER_PASSWORD = 'Lehrer2026!';
+        const PLATFORM_TAG = 'Mieten';
 
         async function handleLogin() {
             const val = document.getElementById('login-input').value.trim();
@@ -296,7 +297,7 @@
 
         async function updateStatus(t) { 
             if(!uName || uName.toLowerCase().includes('lehrer')) return; 
-            await sClient.from('student_progress').upsert({ email: uName, current_task: t, status: 'online' }, { onConflict: 'email' }); 
+            await sClient.from('student_progress').upsert({ email: uName, current_task: '[' + PLATFORM_TAG + '] ' + t, status: 'online' }, { onConflict: 'email' }); 
         }
 
         function initCloze() {
@@ -375,12 +376,22 @@
                 const tr = document.createElement('tr');
                 const tdName = document.createElement('td');
                 tdName.textContent = s.email;
+                const tdPlatform = document.createElement('td');
                 const tdTask = document.createElement('td');
-                const badge = document.createElement('span');
-                badge.className = 'status-badge';
-                badge.textContent = s.current_task;
-                tdTask.appendChild(badge);
+                const raw = s.current_task || '';
+                const match = raw.match(/^\[(.+?)\]\s*(.*)$/);
+                const platBadge = document.createElement('span');
+                platBadge.className = 'status-badge';
+                platBadge.style.background = 'rgba(5,150,105,0.15)';
+                platBadge.style.color = '#059669';
+                platBadge.textContent = match ? match[1] : '–';
+                tdPlatform.appendChild(platBadge);
+                const taskBadge = document.createElement('span');
+                taskBadge.className = 'status-badge';
+                taskBadge.textContent = match ? match[2] : raw;
+                tdTask.appendChild(taskBadge);
                 tr.appendChild(tdName);
+                tr.appendChild(tdPlatform);
                 tr.appendChild(tdTask);
                 list.appendChild(tr);
             });
