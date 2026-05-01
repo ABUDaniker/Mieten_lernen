@@ -399,7 +399,7 @@
 
         function setupRT() { sClient.channel('any').on('postgres_changes', { event: '*', schema: 'public', table: 'student_progress' }, () => loadDash()).subscribe(); }
         function switchView(id) { document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); document.getElementById(id).classList.add('active'); }
-        function logout() { localStorage.clear(); location.reload(); }
+        async function logout() { await updateStatus('Ausgeloggt'); localStorage.clear(); location.reload(); }
 
         document.addEventListener('DOMContentLoaded', () => {
             const saved = localStorage.getItem('user_mieten_v10');
