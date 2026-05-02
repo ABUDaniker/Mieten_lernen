@@ -88,6 +88,10 @@
         .dashboard-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
         .dashboard-table th, .dashboard-table td { padding: 1rem; text-align: left; border-bottom: 1px solid var(--border); }
         .status-badge { display: inline-block; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; background: #dcfce7; color: #166534; }
+        .btn-delete-student { background: none; border: 1px solid #fca5a5; color: #ef4444; border-radius: 6px; padding: 0.3rem 0.6rem; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; font-weight: 600; }
+        .btn-delete-student:hover { background: #fef2f2; border-color: #ef4444; }
+        .btn-clear-all { display: block; width: 100%; padding: 0.8rem; margin-top: 1rem; background: #fef2f2; color: #dc2626; border: 1.5px solid #fca5a5; border-radius: 10px; font-weight: 600; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; }
+        .btn-clear-all:hover { background: #fee2e2; border-color: #ef4444; }
 
         @media print { .no-print { display: none !important; } .card { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; } }
     </style>
@@ -108,9 +112,10 @@
             <header><h1>Lehrer-Übersicht: Mieten</h1></header>
             <div class="card">
                 <table class="dashboard-table">
-                    <thead><tr><th>Name</th><th>Plattform</th><th>Aufgabe</th></tr></thead>
+                    <thead><tr><th>Name</th><th>Plattform</th><th>Aufgabe</th><th></th></tr></thead>
                     <tbody id="student-list"></tbody>
                 </table>
+                <button class="btn-clear-all" onclick="clearAllStudents()">🗑️ Alle Schüler entfernen</button>
             </div>
             <button class="btn-check" onclick="logout()">Abmelden</button>
         </div>
@@ -390,11 +395,31 @@
                 taskBadge.className = 'status-badge';
                 taskBadge.textContent = match ? match[2] : raw;
                 tdTask.appendChild(taskBadge);
+                const tdAction = document.createElement('td');
+                const btnDel = document.createElement('button');
+                btnDel.className = 'btn-delete-student';
+                btnDel.textContent = '✕';
+                btnDel.title = 'Schüler entfernen';
+                btnDel.onclick = () => deleteStudent(s.email);
+                tdAction.appendChild(btnDel);
                 tr.appendChild(tdName);
                 tr.appendChild(tdPlatform);
                 tr.appendChild(tdTask);
+                tr.appendChild(tdAction);
                 list.appendChild(tr);
             });
+        }
+
+        async function deleteStudent(email) {
+            if (!confirm('Schüler "' + email + '" wirklich entfernen?')) return;
+            await sClient.from('student_progress').delete().eq('email', email);
+            loadDash();
+        }
+
+        async function clearAllStudents() {
+            if (!confirm('Wirklich ALLE Schüler aus dem Dashboard entfernen?')) return;
+            await sClient.from('student_progress').delete().neq('email', '');
+            loadDash();
         }
 
         function setupRT() { sClient.channel('any').on('postgres_changes', { event: '*', schema: 'public', table: 'student_progress' }, () => loadDash()).subscribe(); }
